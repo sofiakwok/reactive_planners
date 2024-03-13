@@ -38,11 +38,12 @@ from dg_tools.utils import (
     multiply_mat_vec,
 )
 
-from robot_properties_solo.config import Solo12Config
+from robot_properties_bolt.config import BoltConfig
 
 
-class QuadrupedStepper:
+class BipedStepper:
     def __init__(self, prefix, pin_robot, endeff_names):
+        print("initializing BipedStepper")
         self.prefix = prefix
         self.pin_robot = pin_robot
         self.endeff_names = endeff_names
