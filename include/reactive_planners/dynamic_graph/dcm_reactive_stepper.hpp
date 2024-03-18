@@ -40,6 +40,15 @@ public:
      */
     DcmReactiveStepper(const std::string &name);
 
+    /**
+     * @brief Set the nominal steptime.
+     */
+    void set_steptime_nominal(const double &t_nom);
+
+    /** @brief Set to use the mpc based method for the endeffector trajectories
+     */
+    void set_dynamical_end_effector_trajectory();
+
     /** @brief @copydoc reactive_planners::DcmReactiveStepper::initialize() */
     void initialize(const bool &is_left_leg_in_contact,
                     const double &l_min,
@@ -63,12 +72,18 @@ public:
     void initializeParamVector(const dynamicgraph::Vector &parameters);
 
     /**
+     * @brief Initializes the parameters for the reactive stepper.
+     *
+     */
+    void initializeStepper(const dynamicgraph::Vector &param_vector);
+    
+    /**
      * @brief Start the stepping.
      */
     void start()
     {
         start_stop_mutex_.lock();
-        dcm_reactive_stepper_.start();
+        stepper_.start();
         start_stop_mutex_.unlock();
     }
 
@@ -78,7 +93,7 @@ public:
     void stop()
     {
         start_stop_mutex_.lock();
-        dcm_reactive_stepper_.stop();
+        stepper_.stop();
         start_stop_mutex_.unlock();
     }
 
@@ -453,7 +468,7 @@ protected:
      */
 
     /** @brief Reactive step planner using DCM and VRP. */
-    reactive_planners::DcmReactiveStepper dcm_reactive_stepper_;
+    reactive_planners::DcmReactiveStepper stepper_;
 
     real_time_tools::RealTimeMutex start_stop_mutex_;
 

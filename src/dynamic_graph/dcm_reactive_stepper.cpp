@@ -23,6 +23,9 @@ using ::dynamicgraph::command::docCommandVoid1;
 using ::dynamicgraph::command::makeCommandVoid0;
 using ::dynamicgraph::command::makeCommandVoid1;
 
+using ::dynamicgraph::command::makeCommandVoid7;
+using ::dynamicgraph::command::docCommandVoid7;
+
 DYNAMICGRAPH_FACTORY_ENTITY_PLUGIN(DcmReactiveStepper, "DcmReactiveStepper");
 
 /*
@@ -163,6 +166,23 @@ DcmReactiveStepper::DcmReactiveStepper(const std::string &name)
                                 docCommandVoid1("Initialize parameters.",
                                                 "Parameters (vector)")));
 
+    addCommand("initializeStepper",
+               makeCommandVoid1(*this,
+                                &DcmReactiveStepper::initializeStepper,
+                                docCommandVoid1("Initialize parameters.",
+                                                "Parameters (vector)")));
+
+    addCommand("set_steptime_nominal",
+               makeCommandVoid1(*this,
+                                &DcmReactiveStepper::set_steptime_nominal,
+                                docCommandVoid1("Initialize parameters.",
+                                                "Parameters (double)")));
+
+    addCommand("set_dynamical_end_effector_trajectory",
+               makeCommandVoid0(*this,
+                                &DcmReactiveStepper::set_dynamical_end_effector_trajectory,
+                                docCommandVoid0("Set trajectory")));
+    
     addCommand("start",
                makeCommandVoid0(*this,
                                 &DcmReactiveStepper::start,
@@ -171,7 +191,7 @@ DcmReactiveStepper::DcmReactiveStepper(const std::string &name)
     addCommand("stop",
                makeCommandVoid0(*this,
                                 &DcmReactiveStepper::stop,
-                                docCommandVoid0("Start stepping")));
+                                docCommandVoid0("Stop stepping")));
 }
 
 void DcmReactiveStepper::initialize(
@@ -191,7 +211,7 @@ void DcmReactiveStepper::initialize(
     Eigen::Ref<const Eigen::Vector3d> left_foot_position,
     Eigen::Ref<const Eigen::Vector3d> right_foot_position)
 {
-    dcm_reactive_stepper_.initialize(is_left_leg_in_contact,
+    stepper_.initialize(is_left_leg_in_contact,
                                      l_min,
                                      l_max,
                                      w_min,
@@ -234,22 +254,22 @@ bool &DcmReactiveStepper::inner(bool &s, int time)
         nb_switch_yaw_ = (nb_switch_yaw_ + 1) % 2;
     }
     last_yaw_ = base_yaw(5);
-    //    std::cout << dcm_reactive_stepper_.get_time_from_last_step_touchdown()
+    //    std::cout << stepper_.get_time_from_last_step_touchdown()
     //    << " + " << control_period_ + 0.0000001 << " > " <<
-    //    dcm_reactive_stepper_.get_step_duration() << std::endl;
+    //    stepper_.get_step_duration() << std::endl;
     //    std::cout << time_from_double_support_started_ << " < " <<
     //    double_support_time_ << std::endl;
-    if (dcm_reactive_stepper_.get_time_from_last_step_touchdown() +
+    if (stepper_.get_time_from_last_step_touchdown() +
                 control_period_ + 0.0000001 >
-            dcm_reactive_stepper_.get_step_duration() &&
+            stepper_.get_step_duration() &&
         time_from_double_support_started_ < double_support_time_)
     {
         //        std::cout << "DOUBLESUPPORT\n";
         //        std::cout << "DS\n";
         //        std::cout <<
-        //        (dcm_reactive_stepper_.get_time_from_last_step_touchdown() +
+        //        (stepper_.get_time_from_last_step_touchdown() +
         //        control_period_ + 0.0000001 >
-        //        dcm_reactive_stepper_.get_step_duration()) << std::endl;
+        //        stepper_.get_step_duration()) << std::endl;
         //        std::cout << (time_from_double_support_started_ <
         //        double_support_time_) << std::endl;
         time_from_double_support_started_ += control_period_;
@@ -259,14 +279,14 @@ bool &DcmReactiveStepper::inner(bool &s, int time)
             current_right_foot_position_sin_.access(time);
         current_left_foot_position[2] = 0;
         current_right_foot_position[2] = 0;
-        dcm_reactive_stepper_.set_feet_pos(current_left_foot_position,
+        stepper_.set_feet_pos(current_left_foot_position,
                                            current_right_foot_position);
         start_stop_mutex_.unlock();
         return s = true;
     }
     //    std::cout << "NDS\n";
     time_from_double_support_started_ = 0;
-    dcm_reactive_stepper_.set_desired_com_velocity(desired_com_velocity);
+    stepper_.set_desired_com_velocity(desired_com_velocity);
 
     //    std::cout << nb_switch_yaw_  << " " <<  base_yaw(5) << std::endl;
     Eigen::VectorXd current_left_foot_position =
@@ -281,24 +301,24 @@ bool &DcmReactiveStepper::inner(bool &s, int time)
             current_left_foot_velocity_sin_.access(time);
         current_right_foot_velocity =
             current_right_foot_velocity_sin_.access(time);
-        if (dcm_reactive_stepper_.get_is_left_leg_in_contact())
+        if (stepper_.get_is_left_leg_in_contact())
         {
-            dcm_reactive_stepper_.set_left_foot_position(
+            stepper_.set_left_foot_position(
                 current_left_foot_position);
-            dcm_reactive_stepper_.set_left_foot_velocity(
+            stepper_.set_left_foot_velocity(
                 current_left_foot_velocity);
         }
         else
         {
-            dcm_reactive_stepper_.set_right_foot_position(
+            stepper_.set_right_foot_position(
                 current_right_foot_position);
-            dcm_reactive_stepper_.set_right_foot_velocity(
+            stepper_.set_right_foot_velocity(
                 current_right_foot_velocity);
         }
     }  // Lhum closed loop
 
     // Compute the planner.
-    s = dcm_reactive_stepper_.run(time * control_period_,
+    s = stepper_.run(time * control_period_,
                                   current_left_foot_position,
                                   current_right_foot_position,
                                   current_left_foot_velocity,
@@ -317,7 +337,7 @@ dynamicgraph::Vector &DcmReactiveStepper::dcm(dynamicgraph::Vector &s, int time)
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_dcm();
+    s = stepper_.get_dcm();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -327,7 +347,7 @@ dynamicgraph::Vector &DcmReactiveStepper::force(dynamicgraph::Vector &s,
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_force();
+    s = stepper_.get_force();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -337,7 +357,7 @@ dynamicgraph::Vector &DcmReactiveStepper::right_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_right_foot_position();
+    s = stepper_.get_right_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -347,7 +367,7 @@ dynamicgraph::Vector &DcmReactiveStepper::right_foot_velocity(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_right_foot_velocity();
+    s = stepper_.get_right_foot_velocity();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -357,7 +377,7 @@ dynamicgraph::Vector &DcmReactiveStepper::right_foot_acceleration(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_right_foot_acceleration();
+    s = stepper_.get_right_foot_acceleration();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -367,7 +387,7 @@ dynamicgraph::Vector &DcmReactiveStepper::left_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_left_foot_position();
+    s = stepper_.get_left_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -377,7 +397,7 @@ dynamicgraph::Vector &DcmReactiveStepper::left_foot_velocity(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_left_foot_velocity();
+    s = stepper_.get_left_foot_velocity();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -387,7 +407,7 @@ dynamicgraph::Vector &DcmReactiveStepper::left_foot_acceleration(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_left_foot_acceleration();
+    s = stepper_.get_left_foot_acceleration();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -397,7 +417,7 @@ dynamicgraph::Vector &DcmReactiveStepper::local_right_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_local_right_foot_position();
+    s = stepper_.get_local_right_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -407,7 +427,7 @@ dynamicgraph::Vector &DcmReactiveStepper::local_right_foot_velocity(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_local_right_foot_velocity();
+    s = stepper_.get_local_right_foot_velocity();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -417,7 +437,7 @@ dynamicgraph::Vector &DcmReactiveStepper::local_left_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_local_left_foot_position();
+    s = stepper_.get_local_left_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -427,7 +447,7 @@ dynamicgraph::Vector &DcmReactiveStepper::local_left_foot_velocity(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_local_left_foot_velocity();
+    s = stepper_.get_local_left_foot_velocity();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -437,7 +457,7 @@ dynamicgraph::Vector &DcmReactiveStepper::feasible_com_velocity(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_feasible_com_velocity();
+    s = stepper_.get_feasible_com_velocity();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -447,7 +467,7 @@ dynamicgraph::Vector &DcmReactiveStepper::previous_support_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_previous_support_foot_position();
+    s = stepper_.get_previous_support_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -457,7 +477,7 @@ dynamicgraph::Vector &DcmReactiveStepper::current_support_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_current_support_foot_position();
+    s = stepper_.get_current_support_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -467,7 +487,7 @@ dynamicgraph::Vector &DcmReactiveStepper::next_support_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_next_support_foot_position();
+    s = stepper_.get_next_support_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -476,7 +496,7 @@ double &DcmReactiveStepper::step_duration(double &s, int time)
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_step_duration();
+    s = stepper_.get_step_duration();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -485,7 +505,7 @@ double &DcmReactiveStepper::time_from_last_step_touchdown(double &s, int time)
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_time_from_last_step_touchdown();
+    s = stepper_.get_time_from_last_step_touchdown();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -495,7 +515,7 @@ dynamicgraph::Vector &DcmReactiveStepper::flying_foot_position(
 {
     inner_sout_.access(time);
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_flying_foot_position();
+    s = stepper_.get_flying_foot_position();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -505,7 +525,7 @@ int &DcmReactiveStepper::is_left_leg_in_contact(int &s, int time)
     inner_sout_.access(time);
     if (time_from_double_support_started_ != 0) return s = 2;  // double support
     start_stop_mutex_.lock();
-    s = dcm_reactive_stepper_.get_is_left_leg_in_contact();
+    s = stepper_.get_is_left_leg_in_contact();
     start_stop_mutex_.unlock();
     return s;
 }
@@ -535,9 +555,20 @@ std::string DcmReactiveStepper::make_signal_string(
  * The commands.
  */
 
+void DcmReactiveStepper::set_steptime_nominal(const double &t_nom)
+{
+    stepper_.set_steptime_nominal(t_nom);
+}
+
+void DcmReactiveStepper::set_dynamical_end_effector_trajectory()
+{
+    stepper_.set_dynamical_end_effector_trajectory();
+}
+
 void DcmReactiveStepper::initializeParamVector(
     const dynamicgraph::Vector &params)
 {
+    std::cout << "params.size: %d" << params.size() << std::endl;
     if (params.size() != 29)
     {
         std::cout << "DcmReactiveStepper::InitializeCommand(): Error invalid "
@@ -560,6 +591,45 @@ void DcmReactiveStepper::initializeParamVector(
                params(20),              // planner_loop,
                params.segment<3>(21),   // Vector3d left_foot_position,
                params.segment<3>(24));  // Vector3d right_foot_position
+}
+
+void DcmReactiveStepper::initializeStepper(
+    const dynamicgraph::Vector &param_vector)
+{
+    std::cout << "initializing_stepper" << std::endl;
+
+    const double& is_left_leg_in_contact = param_vector(0);
+    const double& l_min = param_vector(1);
+    const double& l_max = param_vector(2);
+    const double& w_min = param_vector(3);
+    const double& w_max = param_vector(4);
+    const double& t_min = param_vector(5);
+    const double& t_max = param_vector(6);
+    const double& l_p = param_vector(7);
+    const double& com_height = param_vector(8);
+    const double& mid_air_foot_height = param_vector(9);
+    const double& control_period = param_vector(10);
+    const double& planner_loop = param_vector(11);
+    Eigen::Ref<const Eigen::Vector9d> cost_weights_local = param_vector.segment<9>(12);
+    Eigen::Ref<const Eigen::Vector3d> left_foot_position = param_vector.segment<3>(21);
+    Eigen::Ref<const Eigen::Vector3d> right_foot_position = param_vector.segment<3>(24);
+    
+
+    initialize(is_left_leg_in_contact,
+                l_min,
+                l_max,
+                w_min,
+                w_max,
+                t_min,
+                t_max,
+                l_p,
+                com_height,
+                cost_weights_local,
+                mid_air_foot_height,
+                control_period,
+                planner_loop,
+                left_foot_position,
+                right_foot_position);  // Vector3d right_foot_position
 }
 
 DcmReactiveStepper::InitializeCommand::InitializeCommand(

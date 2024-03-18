@@ -22,8 +22,7 @@ from dynamic_graph.sot.core.math_small_entities import (
 
 from mim_control.dynamic_graph.wbc_graph import WholeBodyController
 
-from reactive_planners_cpp import DcmReactiveStepper
-
+from reactive_planners.dynamic_graph.walking import DcmReactiveStepper
 
 from dg_tools.dynamic_graph.dg_tools_entities import PoseRPYToPoseQuaternion
 from dg_tools.utils import (
@@ -43,7 +42,6 @@ from robot_properties_bolt.config import BoltConfig
 
 class BipedStepper:
     def __init__(self, prefix, pin_robot, endeff_names):
-        print("initializing BipedStepper")
         self.prefix = prefix
         self.pin_robot = pin_robot
         self.endeff_names = endeff_names
@@ -92,41 +90,25 @@ class BipedStepper:
         # Setup the pinocchio input quantities for the stepper.
         dg.plug(self.com, self.stepper.com_position_sin)
         dg.plug(self.vcom, self.stepper.com_velocity_sin)
-
         dg.plug(
             self.sig_eff_pos[0],
-            self.stepper.current_front_left_foot_position_sin,
+            self.stepper.current_left_foot_position_sin,
         )
         dg.plug(
             self.sig_eff_vel[0],
-            self.stepper.current_front_left_foot_velocity_sin,
+            self.stepper.current_left_foot_velocity_sin,
         )
         dg.plug(
             self.sig_eff_pos[1],
-            self.stepper.current_front_right_foot_position_sin,
+            self.stepper.current_right_foot_position_sin,
         )
         dg.plug(
             self.sig_eff_vel[1],
-            self.stepper.current_front_right_foot_velocity_sin,
-        )
-        dg.plug(
-            self.sig_eff_pos[2],
-            self.stepper.current_hind_left_foot_position_sin,
-        )
-        dg.plug(
-            self.sig_eff_vel[2],
-            self.stepper.current_hind_left_foot_velocity_sin,
-        )
-        dg.plug(
-            self.sig_eff_pos[3],
-            self.stepper.current_hind_right_foot_position_sin,
-        )
-        dg.plug(
-            self.sig_eff_vel[3],
-            self.stepper.current_hind_right_foot_velocity_sin,
+            self.stepper.current_right_foot_velocity_sin,
         )
 
-        self.stepper.is_closed_loop_sin.value = 0.0
+
+        #self.stepper.is_closed_loop_sin.value = 0.0
 
     def start(self):
         self.stepper.start()
