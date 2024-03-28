@@ -24,9 +24,9 @@ from mim_control.dynamic_graph.wbc_graph import WholeBodyController
 
 from reactive_planners.dynamic_graph.walking import DcmReactiveStepper
 
-from dg_tools.dynamic_graph.dg_tools_entities import PoseRPYToPoseQuaternion
+#from dg_tools.dynamic_graph.dg_tools_entities import PoseRPYToPoseQuaternion
 from dg_tools.utils import (
-    constVectorOp,
+    constVector,
     subtract_vec_vec,
     hom2pos,
     add_vec_vec,
@@ -37,7 +37,7 @@ from dg_tools.utils import (
     multiply_mat_vec,
 )
 
-from robot_properties_bolt.config import BoltConfig
+#from robot_properties_bolt.config import BoltConfig
 
 
 class BipedStepper:
