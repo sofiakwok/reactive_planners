@@ -11,14 +11,10 @@ import numpy as np
 
 np.set_printoptions(suppress=True, precision=3)
 
-import pinocchio as pin
 import dynamic_graph as dg
 
 import dynamic_graph.sot.dynamic_pinocchio as dp
-from dynamic_graph.sot.core.math_small_entities import (
-    Selec_of_matrix,
-    Stack_of_vector,
-)
+from dynamic_graph.sot.core.math_small_entities import Selec_of_matrix
 
 from mim_control.dynamic_graph.wbc_graph import WholeBodyController
 
