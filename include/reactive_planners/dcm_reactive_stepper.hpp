@@ -342,6 +342,11 @@ public:
         return next_support_foot_position_;
     }
 
+    const Eigen::Vector2d &get_contact_array()
+    {
+        return contact_array_;
+    }
+
     /**
      * @brief Get the step duration.
      *
@@ -589,6 +594,10 @@ private:
 
     /** @brief The feasible center of mass velocity achievable by the robot. */
     Eigen::Vector3d feasible_com_velocity_;
+
+    /** @brief Contact array containing which foot are in contact, the order is
+     * [FL, FR]. */
+    Eigen::Vector2d contact_array_;
 
     /** @brief All of forces calculated until the next contact. */
     Eigen::VectorXd forces_;

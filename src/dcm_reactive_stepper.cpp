@@ -34,6 +34,7 @@ DcmReactiveStepper::DcmReactiveStepper()
     local_frame_.setIdentity();
     nb_usage_of_force_ = 0.;
     new_ = true;
+    contact_array_.fill(1);
 }
 
 DcmReactiveStepper::~DcmReactiveStepper() = default;
@@ -126,12 +127,15 @@ bool DcmReactiveStepper::run(
     const bool& is_closed_loop)
 {
     Eigen::Vector3d support_foot;
-    if (is_left_leg_in_contact_)
+    if (is_left_leg_in_contact_){
         support_foot << left_foot_position(0), left_foot_position(1),
             dcm_vrp_planner_.get_com_height();
-    else
+        contact_array_ << 1.0, 0.0;
+    } else {
         support_foot << right_foot_position(0), right_foot_position(1),
             dcm_vrp_planner_.get_com_height();
+        contact_array_ << 0.0, 1.0;
+    }
     pinocchio::SE3 world_M_base(
         Eigen::AngleAxisd(base_yaw, Eigen::Vector3d::UnitZ())
             .toRotationMatrix(),

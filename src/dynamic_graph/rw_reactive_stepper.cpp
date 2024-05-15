@@ -116,9 +116,6 @@ DcmReactiveStepper::DcmReactiveStepper(const std::string &name)
       define_output_signal(is_left_leg_in_contact_sout_,
                            "int",
                            &DcmReactiveStepper::is_left_leg_in_contact),
-      define_output_signal(contact_array_sout_,
-                           "Vector2d",
-                           &DcmReactiveStepper::contact_array),
       define_output_signal(
           has_solution_sout_, "int", &DcmReactiveStepper::has_solution),
       define_output_signal(dcm_sout_, "Vector3d", &DcmReactiveStepper::dcm),
@@ -158,9 +155,7 @@ DcmReactiveStepper::DcmReactiveStepper(const std::string &name)
         << current_support_foot_position_sout_
         << next_support_foot_position_sout_ << step_duration_sout_
         << time_from_last_step_touchdown_sout_ << flying_foot_position_sout_
-        << is_left_leg_in_contact_sout_ 
-        << contact_array_sout_
-        << has_solution_sout_ << inner_sout_
+        << is_left_leg_in_contact_sout_ << has_solution_sout_ << inner_sout_
         << dcm_sout_ << force_sout_);
     /*
      * Initializes the commands
@@ -533,16 +528,6 @@ int &DcmReactiveStepper::is_left_leg_in_contact(int &s, int time)
     s = stepper_.get_is_left_leg_in_contact();
     start_stop_mutex_.unlock();
     return s;
-}
-
-dynamicgraph::Vector &DcmReactiveStepper::contact_array(
-    dynamicgraph::Vector &signal_data, int time)
-{
-    inner_sout_.access(time);
-    start_stop_mutex_.lock();
-    signal_data = stepper_.get_contact_array();
-    start_stop_mutex_.unlock();
-    return signal_data;
 }
 
 int &DcmReactiveStepper::has_solution(int &s, int time)

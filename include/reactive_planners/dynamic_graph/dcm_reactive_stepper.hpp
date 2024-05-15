@@ -193,6 +193,10 @@ public:
     dynamicgraph::SignalTimeDependent<dynamicgraph::Vector, int>
         feasible_com_velocity_sout_;
 
+    /** @brief Active endeffector contacts. */
+    dynamicgraph::SignalTimeDependent<dynamicgraph::Vector, int>
+        contact_array_sout_;
+
     /** @brief Previous support foot position. */
     dynamicgraph::SignalTimeDependent<dynamicgraph::Vector, int>
         previous_support_foot_position_sout_;
@@ -374,6 +378,26 @@ protected:
      */
     dynamicgraph::Vector &feasible_com_velocity(dynamicgraph::Vector &s,
                                                 int time);
+
+    /**
+     * @brief Callback of the contact_array_sout_ signal.
+     *
+     * @param s
+     * @param time
+     * @return dynamicgraph::Vector&
+     */
+    dynamicgraph::Vector& contact_array(dynamicgraph::Vector& signal_data,
+                                        int time);
+
+    /**
+     * @brief Callback of the swing_foot_forces_sout_ signal.
+     *
+     * @param s
+     * @param time
+     * @return dynamicgraph::Vector&
+     */
+    dynamicgraph::Vector& swing_foot_forces(dynamicgraph::Vector& signal_data,
+                                            int time);
 
     /**
      * @brief Callback of the previous_support_foot_position_sout_ signal.

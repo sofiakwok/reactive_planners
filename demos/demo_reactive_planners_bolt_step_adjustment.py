@@ -92,10 +92,10 @@ if __name__ == "__main__":
     planner_loop = 0.010
     x_des_local = [
         q[0].item(),
-        q[1].item() + 0.02,
+        q[1].item(),
         0.0,
         q[0].item(),
-        q[1].item() - 0.02,
+        q[1].item(),
         0.0,
     ]
     past_x = x_des_local.copy()
