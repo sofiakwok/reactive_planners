@@ -136,6 +136,7 @@ bool DcmReactiveStepper::run(
             dcm_vrp_planner_.get_com_height();
         contact_array_ << 0.0, 1.0;
     }
+
     pinocchio::SE3 world_M_base(
         Eigen::AngleAxisd(base_yaw, Eigen::Vector3d::UnitZ())
             .toRotationMatrix(),
@@ -169,6 +170,7 @@ bool DcmReactiveStepper::run(
         (!running_ && time_from_last_step_touchdown_ + control_period_ +
                               std::numeric_limits<double>::epsilon() <
                           step_duration_))
+    // if (running_)
     {
         walk(time,
              left_foot_position,
@@ -463,6 +465,8 @@ bool DcmReactiveStepper::stand_still(
 
     // Compute the feasible velocity.
     feasible_com_velocity_.setZero();
+
+    contact_array_ << 1.0, 1.0;
 
     return succeed;
 }
