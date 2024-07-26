@@ -170,7 +170,6 @@ bool DcmReactiveStepper::run(
         (!running_ && time_from_last_step_touchdown_ + control_period_ +
                               std::numeric_limits<double>::epsilon() <
                           step_duration_))
-    // if (running_)
     {
         walk(time,
              left_foot_position,
@@ -186,6 +185,7 @@ bool DcmReactiveStepper::run(
     {
         stand_still(time, left_foot_position, right_foot_position);
     }
+    //std::cout << "succeeded: " << succeed << std::endl;
     return succeed;
 }
 
