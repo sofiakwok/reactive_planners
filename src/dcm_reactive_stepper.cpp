@@ -453,7 +453,7 @@ bool DcmReactiveStepper::stand_still(
 
     // Extract the useful information.
     step_duration_ = 0.0;
-    next_support_foot_position_ = dcm_vrp_planner_.get_next_step_location();
+    next_support_foot_position_ = left_foot_position_;//dcm_vrp_planner_.get_next_step_location();
 
     // Feet do not move.
     left_foot_position_(2) = 0.0;
